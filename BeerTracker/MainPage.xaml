@@ -8,6 +8,13 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock x:Name="CurrentWeight" Text="--" Margin="10" TextAlignment="Center" FontSize="32" />
+            <TextBlock x:Name="PotSetting" Text="--" Margin="10,10,10,10" TextAlignment="Center" FontSize="28" />
+            <TextBlock x:Name="I2CStatus" Text="Waiting to initialize I2C..." Margin="10,50,10,10" TextAlignment="Center" FontSize="26.667" />
+            <TextBlock x:Name="MessageJunk" Text="--" Margin="10,10,10,10" FontSize="28" Height="163" />
+            <Button x:Name="exitButton" Width="308" Height="46" Click="exitButton_Click">Exit</Button>
+        </StackPanel>
 
     </Grid>
 </Page>
