@@ -1,23 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Gpio;
 using Windows.Devices.I2c;
 using Windows.Devices.Spi;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -25,6 +14,9 @@ namespace BeerTracker
 {
     public sealed partial class MainPage : Page
     {
+        private const int _baseAdcValue = 5226;
+        private const decimal _ouncesPerPoint = 0.200738m;
+
         private GpioController _gpio;
         private I2cDevice _adc;
         private SpiDevice SpiADC;
@@ -49,8 +41,7 @@ namespace BeerTracker
         {
             try
             {
-                InitGPIO();         /* Initialize GPIO to toggle the LED                          */
-                //await InitSPI();    /* Initialize the SPI bus for communicating with the ADC      */
+                InitGPIO();         // Initialize GPIO to toggle the LED
                 await InitI2C();        // Initialize the I2C bus
 
             }
@@ -63,10 +54,7 @@ namespace BeerTracker
             ///* Now that everything is initialized, create a timer so we read data every 100mS */
             periodicTimer = new Timer(this.PeriodTimer_Tick, null, 0, 500);
 
-            //if (buttonPin != null)
-            //    timer.Start();
-
-            I2CStatus.Text += " Blink running";
+            I2CStatus.Text += " Beer tracker running";
         }
 
         private void PeriodTimer_Tick(object state)
@@ -126,16 +114,17 @@ namespace BeerTracker
                 _adc.WriteRead(new byte[] { 0x0 }, bytearray);
 
                 // Convert to int16
-                // Converti en int16
                 if (BitConverter.IsLittleEndian)
                     Array.Reverse(bytearray);
 
                 var adcValue = BitConverter.ToInt16(bytearray, 0);
+                var currentWeigth = ConvertToPounds(adcValue);
 
                 /* UI updates must be invoked on the UI thread */
                 var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
-                    PotSetting.Text = adcValue.ToString();         /* Display the value on screen                      */
+                    PotSetting.Text = adcValue.ToString();         /* Display the value on screen  */
+                    CurrentWeight.Text = currentWeigth.ToString(); /* Display the weight in pounds  */
                 });
             }
             else
@@ -147,6 +136,11 @@ namespace BeerTracker
             }
         }
 
+        private object ConvertToPounds(short adcValue)
+        {
+            return ((adcValue - _baseAdcValue) * _ouncesPerPoint) / 16.0m;
+        }
+
         private void exitButton_Click(object sender, RoutedEventArgs e)
         {
             if (_adc != null)
@@ -154,8 +148,6 @@ namespace BeerTracker
                 _adc.Dispose();
                 _adc = null;
             }
-
-            InitI2C();
         }
     }
 }
